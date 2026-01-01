@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle, Circle, Trash2, Plus, X, Clock, Flag, GripVertical, TrendingUp, Link2, Download } from 'lucide-react';
+import { Calendar, CheckCircle, Circle, Trash2, Plus, X, Clock, Flag, GripVertical, TrendingUp, Link2 } from 'lucide-react';
 
 const CalendarPlanner = () => {
   const [todos, setTodos] = useState([]);
@@ -10,8 +10,6 @@ const CalendarPlanner = () => {
   const [draggedTodo, setDraggedTodo] = useState(null);
   const [showModal, setShowModal] = useState(null);
   const [modalInput, setModalInput] = useState({ title: '', url: '' });
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -58,95 +56,6 @@ const CalendarPlanner = () => {
   useEffect(() => {
     localStorage.setItem('productivityHub_resources', JSON.stringify(resources));
   }, [resources]);
-
-  // Handle PWA install prompt
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      console.log('beforeinstallprompt event fired');
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e);
-      // Show install button
-      setShowInstallPrompt(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Check if app is already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
-
-    console.log('Is app installed (standalone mode)?', isStandalone);
-
-    if (isStandalone) {
-      console.log('App is already installed');
-      setShowInstallPrompt(false);
-    } else {
-      // Show prompt button for testing/demo purposes after 2 seconds if event hasn't fired
-      const timeout = setTimeout(() => {
-        if (!deferredPrompt) {
-          console.log('beforeinstallprompt not fired yet, showing button anyway for demo');
-          setShowInstallPrompt(true);
-        }
-      }, 2000);
-
-      return () => {
-        clearTimeout(timeout);
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      };
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, [deferredPrompt]);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      console.log('No install prompt available. This happens when:');
-      console.log('1. App is already installed');
-      console.log('2. Browser doesn\'t support PWA installation');
-      console.log('3. PWA criteria not met (needs HTTPS, manifest, service worker)');
-      console.log('4. Running in development mode (npm start) - try production build (npm run build)');
-
-      // Provide helpful instructions
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-      if (isDev) {
-        alert('⚠️ PWA Installation in Development Mode\n\n' +
-          'The install feature only works in production builds.\n\n' +
-          'To test installation:\n' +
-          '1. Run: npm run build\n' +
-          '2. Serve the build folder\n' +
-          '3. Or deploy to a hosting service\n\n' +
-          'The button will work automatically once deployed!');
-      } else {
-        alert('Installation is not available right now. Make sure you\'re:\n\n' +
-          '1. Using a supported browser (Chrome, Edge, Safari)\n' +
-          '2. Not already installed\n' +
-          '3. Accessing via HTTPS or localhost\n\n' +
-          'Try opening the browser menu and look for "Install app" option.');
-      }
-      return;
-    }
-
-    // Show the install prompt
-    deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-    } else {
-      console.log('User dismissed the install prompt');
-    }
-
-    // Clear the deferredPrompt so it can't be used again
-    setDeferredPrompt(null);
-    setShowInstallPrompt(false);
-  };
 
   const getDaysInMonth = (date) => {
     const year = parseInt(date.split('-')[0]);
@@ -538,42 +447,6 @@ const CalendarPlanner = () => {
               </div>
             ))
           )}
-        </div>
-      </div>
-    );
-  };
-
-  const InstallPrompt = () => {
-    if (!showInstallPrompt) return null;
-
-    return (
-      <div className="fixed bottom-4 right-4 z-40">
-        <div className="bg-white rounded-lg shadow-2xl p-4 max-w-sm border-2 border-blue-500 animate-bounce">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
-              <Download className="text-blue-600" size={24} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-gray-800 mb-1">Install App</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Install this app on your device for a better experience!
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleInstallClick}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm transition-colors"
-                >
-                  Install
-                </button>
-                <button
-                  onClick={() => setShowInstallPrompt(false)}
-                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm transition-colors"
-                >
-                  Not now
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     );
