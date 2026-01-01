@@ -62,6 +62,7 @@ const CalendarPlanner = () => {
   // Handle PWA install prompt
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
+      console.log('beforeinstallprompt event fired');
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
       // Stash the event so it can be triggered later
@@ -73,17 +74,41 @@ const CalendarPlanner = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    console.log('Is app installed (standalone mode)?', isStandalone);
+
+    if (isStandalone) {
+      console.log('App is already installed');
       setShowInstallPrompt(false);
+    } else {
+      // Show prompt button for testing/demo purposes after 2 seconds if event hasn't fired
+      const timeout = setTimeout(() => {
+        if (!deferredPrompt) {
+          console.log('beforeinstallprompt not fired yet, showing button anyway for demo');
+          setShowInstallPrompt(true);
+        }
+      }, 2000);
+
+      return () => {
+        clearTimeout(timeout);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      };
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
+      console.log('No install prompt available. This happens when:');
+      console.log('1. App is already installed');
+      console.log('2. Browser doesn\'t support PWA installation');
+      console.log('3. PWA criteria not met (needs HTTPS, manifest, service worker)');
+      alert('Installation is not available right now. Make sure you\'re:\n\n1. Using a supported browser (Chrome, Edge, Safari)\n2. Not already installed\n3. Accessing via HTTPS or localhost');
       return;
     }
 
