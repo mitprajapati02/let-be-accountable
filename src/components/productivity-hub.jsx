@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle, Circle, Trash2, Plus, X, Clock, Flag, GripVertical, TrendingUp, Link2 } from 'lucide-react';
+import { Calendar, CheckCircle, Circle, Trash2, Plus, X, Clock, Flag, GripVertical, TrendingUp, Link2, Download } from 'lucide-react';
 
 const CalendarPlanner = () => {
   const [todos, setTodos] = useState([]);
@@ -10,6 +10,8 @@ const CalendarPlanner = () => {
   const [draggedTodo, setDraggedTodo] = useState(null);
   const [showModal, setShowModal] = useState(null);
   const [modalInput, setModalInput] = useState({ title: '', url: '' });
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -56,6 +58,51 @@ const CalendarPlanner = () => {
   useEffect(() => {
     localStorage.setItem('productivityHub_resources', JSON.stringify(resources));
   }, [resources]);
+
+  // Handle PWA install prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      setDeferredPrompt(e);
+      // Show install button
+      setShowInstallPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+      setShowInstallPrompt(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      return;
+    }
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+
+    // Clear the deferredPrompt so it can't be used again
+    setDeferredPrompt(null);
+    setShowInstallPrompt(false);
+  };
 
   const getDaysInMonth = (date) => {
     const year = parseInt(date.split('-')[0]);
@@ -452,6 +499,42 @@ const CalendarPlanner = () => {
     );
   };
 
+  const InstallPrompt = () => {
+    if (!showInstallPrompt) return null;
+
+    return (
+      <div className="fixed bottom-4 right-4 z-40">
+        <div className="bg-white rounded-lg shadow-2xl p-4 max-w-sm border-2 border-blue-500 animate-bounce">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
+              <Download className="text-blue-600" size={24} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-gray-800 mb-1">Install App</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Install this app on your device for a better experience!
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleInstallClick}
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm transition-colors"
+                >
+                  Install
+                </button>
+                <button
+                  onClick={() => setShowInstallPrompt(false)}
+                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm transition-colors"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
@@ -495,6 +578,7 @@ const CalendarPlanner = () => {
         {view === 'day' && <DayView />}
         {view === 'habits' && <HabitsView />}
         {view === 'resources' && <ResourcesView />}
+        <InstallPrompt />
 
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={closeModal}>
