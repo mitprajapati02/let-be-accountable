@@ -108,7 +108,26 @@ const CalendarPlanner = () => {
       console.log('1. App is already installed');
       console.log('2. Browser doesn\'t support PWA installation');
       console.log('3. PWA criteria not met (needs HTTPS, manifest, service worker)');
-      alert('Installation is not available right now. Make sure you\'re:\n\n1. Using a supported browser (Chrome, Edge, Safari)\n2. Not already installed\n3. Accessing via HTTPS or localhost');
+      console.log('4. Running in development mode (npm start) - try production build (npm run build)');
+
+      // Provide helpful instructions
+      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      if (isDev) {
+        alert('⚠️ PWA Installation in Development Mode\n\n' +
+          'The install feature only works in production builds.\n\n' +
+          'To test installation:\n' +
+          '1. Run: npm run build\n' +
+          '2. Serve the build folder\n' +
+          '3. Or deploy to a hosting service\n\n' +
+          'The button will work automatically once deployed!');
+      } else {
+        alert('Installation is not available right now. Make sure you\'re:\n\n' +
+          '1. Using a supported browser (Chrome, Edge, Safari)\n' +
+          '2. Not already installed\n' +
+          '3. Accessing via HTTPS or localhost\n\n' +
+          'Try opening the browser menu and look for "Install app" option.');
+      }
       return;
     }
 
